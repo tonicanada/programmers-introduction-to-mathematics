@@ -98,3 +98,5 @@ class Polynomial(object):
 
 
 ZERO = Polynomial([])
+
+
