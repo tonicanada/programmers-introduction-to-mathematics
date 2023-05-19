@@ -2,7 +2,7 @@ from itertools import zip_longest
 
 
 def strip(L, elt):
-    '''Strip all copies of elt from the end of the list.
+    """Strip all copies of elt from the end of the list.
 
     Arguments:
         L: a list (an indexable, sliceable object)
@@ -10,7 +10,7 @@ def strip(L, elt):
 
     Returns:
         a slice of L with all copies of elt removed from the end.
-    '''
+    """
     if len(L) == 0:
         return L
 
@@ -18,33 +18,31 @@ def strip(L, elt):
     while i >= 0 and L[i] == elt:
         i -= 1
 
-    return L[:i+1]
+    return L[: i + 1]
 
 
 class Polynomial(object):
-    '''A class representing a polynomial as a list of coefficients with no
+    """A class representing a polynomial as a list of coefficients with no
     trailing zeros.
 
     A degree zero polynomial corresponds to the empty list of coefficients,
     and is provided by this module as the variable ZERO.
 
     Polynomials override the basic arithmetic operations.
-    '''
+    """
 
     def __init__(self, coefficients):
-        '''Create a new polynomial.
+        """Create a new polynomial.
 
         The caller must provide a list of all coefficients of the
         polynomial, even those that are zero. E.g.,
         Polynomial([0, 1, 0, 2]) corresponds to f(x) = x + 2x^3.
-        '''
+        """
         self.coefficients = strip(coefficients, 0)
-        self.indeterminate = 'x'
+        self.indeterminate = "x"
 
     def add(self, other):
-        new_coefficients = [
-            sum(x) for x in zip_longest(self, other, fillvalue=0.)
-        ]
+        new_coefficients = [sum(x) for x in zip_longest(self, other, fillvalue=0.0)]
         return Polynomial(new_coefficients)
 
     def __add__(self, other):
@@ -55,28 +53,40 @@ class Polynomial(object):
 
         for i, a in enumerate(self):
             for j, b in enumerate(other):
-                new_coefficients[i+j] += a*b
+                new_coefficients[i + j] += a * b
 
         return Polynomial(strip(new_coefficients, 0))
+
+    def power(self, exponent):
+        base = Polynomial([1])
+        # if exponent == 0:
+        #     return Polynomial([1])
+        for i in range(exponent):
+            base *= self
+        return base
 
     def __mul__(self, other):
         return self.multiply(other)
 
     def __len__(self):
-        '''len satisfies len(p) == 1 + degree(p).'''
+        """len satisfies len(p) == 1 + degree(p)."""
         return len(self.coefficients)
 
     def __repr__(self):
-        return ' + '.join(['%s %s^%d' % (a, self.indeterminate, i) if i > 0 else '%s' % a
-                           for i, a in enumerate(self.coefficients)])
+        return " + ".join(
+            [
+                "%s %s^%d" % (a, self.indeterminate, i) if i > 0 else "%s" % a
+                for i, a in enumerate(self.coefficients)
+            ]
+        )
 
     def evaluate_at(self, x):
-        '''Evaluate a polynomial at an input point.
+        """Evaluate a polynomial at an input point.
 
         Uses Horner's method, first discovered by Persian mathematician
         Sharaf al-Dīn al-Ṭūsī, which evaluates a polynomial by minimizing
         the number of multiplications.
-        '''
+        """
         theSum = 0
 
         for c in reversed(self.coefficients):
@@ -96,7 +106,8 @@ class Polynomial(object):
     def __call__(self, *args):
         return self.evaluate_at(args[0])
 
+    def __pow__(self, value):
+        return self.power(value)
+
 
 ZERO = Polynomial([])
-
-

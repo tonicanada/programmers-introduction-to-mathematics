@@ -1,5 +1,9 @@
 from polynomial import Polynomial
+from scipy.special import comb
 import timeit
+import matplotlib.pyplot as plt
+import numpy as np
+import time
 
 
 def get_polynomial_from_points_lagrange(points_list=[(1, 324), (3, 2383), (5, 6609)]):
@@ -54,6 +58,71 @@ def get_polynomial_from_points_newton(points_list=[(1, 324), (3, 2383), (5, 6609
         return res
 
     return get_pk_newton(n - 1, a)
+
+
+def get_bezier_curve(points_list=[(3, 3), (0, 1), (-3, 2), (-5, -4)]):
+    n = len(points_list)
+    x = Polynomial([0])
+    y = Polynomial([0])
+    for i in range(n):
+        x += (
+            Polynomial([comb(n - 1, i) * points_list[i][0]])
+            * Polynomial([1, -1]) ** (n - i - 1)
+            * Polynomial([0, 1]) ** i
+        )
+        y += (
+            Polynomial([comb(n - 1, i) * points_list[i][1]])
+            * Polynomial([1, -1]) ** (n - i - 1)
+            * Polynomial([0, 1]) ** i
+        )
+
+    return [x, y]
+
+
+def plot_construction_bezier_curve(
+    points_list=[(3, 3), (0, 1), (-3, 2), (-5, -4), (0, -8)]
+):
+    """
+    Esta función muestra a lo largo del tiempo como se va formando la curva Bezier
+    """
+    margen = 2
+    max_x = max(point[0] for point in points_list) + margen
+    max_y = max(point[1] for point in points_list) + margen
+    min_x = min(point[0] for point in points_list) - margen
+    min_y = min(point[1] for point in points_list) - margen
+
+    # Obtener las coordenadas x e y de los puntos
+    x = [point[0] for point in points_list]
+    y = [point[1] for point in points_list]
+
+    fig, ax = plt.subplots()
+    ax.set_xlim(min_x, max_x)
+    ax.set_ylim(min_y, max_y)
+    ax.set_xlabel("x")
+    ax.set_ylabel("y")
+    ax.set_title("Construcción curvas Bezier")
+    plt.grid(True)
+
+    # Dibujar los puntos
+    plt.scatter(x, y)
+
+    # Construye las curvas
+    for i in range(len(points_list)):
+        plt.annotate(
+            i + 1, (x[i], y[i]), textcoords="offset points", xytext=(0, 10), ha="center"
+        )
+
+    for i in range(len(points_list)):
+        curve = get_bezier_curve(points_list[: i + 1])
+        t = np.linspace(0, 1, 100)
+        x = curve[0](t)
+        y = curve[1](t)
+        ax.plot(x, y)
+        plt.draw()
+        plt.pause(1.5)
+        time.sleep(1.5)
+
+    plt.show()
 
 
 def horners_method(p, x):
