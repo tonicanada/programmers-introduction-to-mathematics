@@ -1,4 +1,5 @@
 from itertools import zip_longest
+import numpy as np
 
 
 def strip(L, elt):
@@ -57,6 +58,39 @@ class Polynomial(object):
 
         return Polynomial(strip(new_coefficients, 0))
 
+    def degree(self):
+        return len(self.coefficients) - 1
+
+    def long_division(self, divisor):
+        dividend = Polynomial(self.coefficients)
+
+        result_degree = len(self.coefficients) - len(divisor.coefficients)
+        result = {
+            "quotient": np.zeros(result_degree + 1),
+            "remainder": 0
+        }
+
+        counter = result_degree + 1
+        for idx in range(result_degree + 1):
+            # Find quotient
+            a = dividend.coefficients[-1] / divisor.coefficients[-1]
+            result['quotient'][idx] = a
+            mult_list = np.flip(result['quotient'])[:counter]
+            mult_poly = Polynomial(mult_list)
+            # Multiply
+            mult = mult_poly * divisor
+            # Substract
+            dividend = dividend.add(-mult)
+            if len(dividend.coefficients) == 0:
+                break
+            counter = counter - 1
+        result['quotient'] = np.flip(result['quotient'])
+        result['quotient'] = Polynomial(result['quotient'])
+        result['remainder'] = dividend
+        return result
+
+    # def extended_euclidean_algorithm(self, other);
+
     def power(self, exponent):
         base = Polynomial([1])
         # if exponent == 0:
@@ -111,3 +145,61 @@ class Polynomial(object):
 
 
 ZERO = Polynomial([])
+
+
+def euclidean_algorithm(poly1, poly2, q_list):
+    # Base case
+    if (poly2.coefficients == []):
+        res = Polynomial(q_list[-2])
+        return res
+    result = poly1.long_division(poly2)
+    q_list.append(result['remainder'].coefficients)
+    return euclidean_algorithm(poly2, result['remainder'], q_list)
+
+
+# Test long division
+def test_long_division(dividend, divisor):
+    result = Polynomial(dividend).long_division(Polynomial(divisor))
+    quotient = result['quotient']
+    remainder = result['remainder']
+    print("QUOTIENT", quotient)
+    print("REMAINDER", remainder)
+    print((quotient * divisor + remainder).coefficients == dividend)
+
+
+# Test euclidean algorithm
+def test_eucliedan_algorithm():
+    dividend = Polynomial([-3, 1]) * Polynomial([-5, 1]) * Polynomial([-10, 1])
+    print("DIVIDEND", dividend)
+    divisor = Polynomial([-3, 1])
+    print("DIVISOR", divisor)
+    print("DIV", dividend.long_division(divisor))
+    result = euclidean_algorithm(dividend, divisor)
+    print(str(result))
+
+
+# test_long_division([-150, 95, -18, 1], [-3, 1])
+# test_long_division([150, 10], [-3, 1])
+# test_long_division([5, -11, -7, 4], [5, 4]),
+# test_long_division([2, 0, 6, 0, 1], [5, 0, 1])
+# test_long_division([-1, 2, -5, 3], [1, -3, 2])
+# test_long_division([0, -0.25], [4])
+
+# test_eucliedan_algorithm()
+# test_eucliedan_algorithm()
+
+poly1 = [-1, 3, -3, 1]
+poly2 = [4, -5, 2]
+res = euclidean_algorithm(Polynomial(poly1), Polynomial(poly2), [])
+a = Polynomial(poly1).long_division(res)
+b = Polynomial(poly2).long_division(res)
+print(res)
+print(b)
+print(a)
+
+
+
+
+# poly1 = Polynomial([4, -5, 1])
+# poly2 = Polynomial([-9, 9])
+# print(poly1.long_division(poly2))

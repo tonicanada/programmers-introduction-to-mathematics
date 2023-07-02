@@ -186,3 +186,14 @@ def comparison_lagrange_vs_newton_interpolation(
     )
     print("Tiempo de ejecución de interpolación de lagrange:", t_lagrange)
     print("Tiempo de ejecución de interpolación de newton:", t_newton)
+
+
+# a = Polynomial([129, 931, -201, 103, -80])
+# print(a(0), a(1), a(2), a(3), a(4), a(5), a(6), a(7))
+
+a = Polynomial([1,4,1,2])
+b = Polynomial([-5,1,1])
+
+c = a.long_division(b)
+
+print(b*c["quotient"] + c["remainder"])
