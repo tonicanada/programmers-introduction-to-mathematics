@@ -1,4 +1,5 @@
 from itertools import combinations
+import igraph as ig
 
 
 colors = list(range(5))
@@ -37,17 +38,19 @@ def planar_five_color(graph):
     deg_at_most4_nodes = deg_at_most5_nodes.select(_degree_le=4)
     deg5_nodes = deg_at_most5_nodes.select(_degree_eq=5)
 
-    if not deg5_nodes:
-        raise ValueError("Input graph (or recursive subgraph) does not "
-                         "have a degree 5 node. Input graph is not planar.")
+    # if not deg5_nodes:
+    #     raise ValueError("Input graph (or recursive subgraph) does not "
+    #                      "have a degree 5 node. Input graph is not planar.")
 
     g_prime = graph.copy()
+
     # preserved when deleting vertices
     g_prime.vs['old_index'] = list(range(n))
 
     if len(deg_at_most4_nodes) > 0:
         v = deg_at_most4_nodes[0]
         g_prime.delete_vertices(v.index)
+
     else:
         v = deg5_nodes[0]
         neighbor_indices = [

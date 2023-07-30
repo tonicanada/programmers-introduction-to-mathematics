@@ -188,14 +188,14 @@ def test_eucliedan_algorithm():
 # test_eucliedan_algorithm()
 # test_eucliedan_algorithm()
 
-poly1 = [-1, 3, -3, 1]
-poly2 = [4, -5, 2]
-res = euclidean_algorithm(Polynomial(poly1), Polynomial(poly2), [])
-a = Polynomial(poly1).long_division(res)
-b = Polynomial(poly2).long_division(res)
-print(res)
-print(b)
-print(a)
+# poly1 = [-1, 3, -3, 1]
+# poly2 = [4, -5, 2]
+# res = euclidean_algorithm(Polynomial(poly1), Polynomial(poly2), [])
+# a = Polynomial(poly1).long_division(res)
+# b = Polynomial(poly2).long_division(res)
+# print(res)
+# print(b)
+# print(a)
 
 
 

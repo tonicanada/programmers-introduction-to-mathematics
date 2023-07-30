@@ -1,6 +1,12 @@
 import itertools
 
 
+# Colores utilizando secuencias de escape ANSI
+color_rojo = '\033[91m'
+color_verde = '\033[92m'
+color_reset = '\033[0m'
+
+
 class Suitor:
     def __init__(self, id, preference_list):
         """ A Suitor consists of an integer id (between 0 and the total number
@@ -51,7 +57,6 @@ class Suited:
                         key=lambda suitor: self.preference_list.index(suitor.id))
         rejected = self.current_suitors - set([self.held])
         self.current_suitors = set([self.held])
-
         return rejected
 
     def add_suitor(self, suitor):
@@ -79,6 +84,7 @@ def stable_marriage(suitors, suiteds):
     """
     unassigned = set(suitors)
 
+    counter = 0
     while len(unassigned) > 0:
         for suitor in unassigned:
             next_to_propose_to = suiteds[suitor.preference()]
@@ -88,13 +94,18 @@ def stable_marriage(suitors, suiteds):
         for suited in suiteds:
             unassigned |= suited.reject()
 
+        # for suited in suiteds:
+        #     print(color_rojo, suited.id, suited.held, color_reset)
+
         for suitor in unassigned:
             suitor.post_rejection()  # have some ice cream
+
+        counter += 1
 
     return dict([(suited.held, suited) for suited in suiteds])
 
 
-def verify_stable(suitors, suiteds, marriage):
+def verify_stable( suitors, suiteds, marriage):
     """ Check that the assignment of suitors to suited is a stable marriage.
 
     Arguments:
@@ -125,3 +136,28 @@ def verify_stable(suitors, suiteds, marriage):
             return False, (suitor, suited)
 
     return True
+
+
+suitors = [
+    Suitor(0, [3, 2, 1, 0]),
+    Suitor(1, [3, 2, 1, 0]),
+    Suitor(2, [3, 2, 1, 0]),
+    Suitor(3, [3, 2, 1, 0]),
+]
+
+suiteds = [
+    Suited(0, [0, 1, 2, 3]),
+    Suited(1, [0, 1, 2, 3]),
+    Suited(2, [0, 1, 2, 3]),
+    Suited(3, [0, 1, 2, 3]),
+]
+
+
+res = stable_marriage(suitors, suiteds)
+
+print(res)
+
+for suitor in suitors:
+    print(suitor.id, suitor.index_to_propose_to)
+
+print(verify_stable(suitors, suiteds, res))
