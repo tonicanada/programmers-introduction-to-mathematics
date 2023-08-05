@@ -261,7 +261,8 @@ def get_cycles(graph):
 def check_graph_2_colorable(graph):
     return graph.is_bipartite()
 
-def color_2_colorable_graph(graph, colors=[0,1]):
+
+def color_2_colorable_graph(graph, colors=[0, 1]):
     # Check if graph is 2-colorable
     if not check_graph_2_colorable(graph):
         print("Graph is not 2-colorable")
@@ -329,6 +330,7 @@ def color_3_colorable_graph_at_most_4_sqrt_n(graph):
 
     for cluster in clusters:
         subgraph = graph.subgraph(cluster)
+        subgraph.vs['old_index'] = list(range(subgraph.vcount()))
 
         while len(subgraph.vs.select(lambda v: v['color'] == None)) > 0:
             vertex_degree_at_least_sqrt_n = subgraph.vs.select(
@@ -345,13 +347,29 @@ def color_3_colorable_graph_at_most_4_sqrt_n(graph):
                     nw['color'] = [j for j in color_set[1:] if j not in nw_nw_colors][0]
             else:
                 vertex_degree_at_most_sqrt_n = subgraph.vs.select(lambda v: v['color'] == None)
-                current_vertex = vertex_degree_at_most_sqrt_n[0]
-                dfs_not_colored(subgraph, current_vertex, colors[used_colors:])
+                # We create a subgraph with these vertices
+                sg = subgraph.subgraph(vertex_degree_at_most_sqrt_n)
+                # We iterate on the clusters
+                for cl in sg.clusters():
+                    sgsg = sg.subgraph(cl)
+                    if check_graph_2_colorable(sgsg):
+                        print("2 colorable!")
+                        color_2_colorable_graph(sgsg, colors=colors[used_colors:used_colors + 2])
+                        used_colors = used_colors +2
+                    else:
+                        print("not 2 colorable")
+                        current_vertex = sgsg.vs[0]
+                        dfs_not_colored(subgraph, current_vertex, colors[used_colors:])
+                    for v in sgsg.vs:
+                        sg.vs.select(lambda w: w['old_index'] == v['old_index'])[
+                            0]['color'] = v['color']
+                for v in sg.vs:
+                    subgraph.vs.select(lambda w: w['old_index'] == v['old_index'])[0]['color'] = v['color']
+                
 
         for i, vertex_index in enumerate(cluster):
             graph.vs[vertex_index]["color"] = subgraph.vs[i]["color"]
 
-    print(colors)
     print(list(set(graph.vs['color']))
           )
     plot_graph(graph, vertex_label=graph.vs['color'])
@@ -370,8 +388,10 @@ g1 = ig.Graph.Read_GraphML("./planar_5_coloring/sample_graphs/20230802_225201_MU
 g2 = ig.Graph.Read_GraphML("./planar_5_coloring/sample_graphs/20230802_225349_MUG9_2.graphml")
 g3 = ig.Graph.Read_GraphML("./planar_5_coloring/sample_graphs/20230802_225655_MUG11a_3.graphml")
 
-tree = get_graph_example('Tree')
+# tree = get_graph_example('Tree')
 
-# g = graph_initial = g2.disjoint_union(g2)
+g = graph_initial = g3.disjoint_union(g3)
 
-g = color_3_colorable_graph_at_most_4_sqrt_n(g1)
+g = color_3_colorable_graph_at_most_4_sqrt_n(g)
+
+
