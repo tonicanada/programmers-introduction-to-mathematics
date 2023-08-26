@@ -80,7 +80,7 @@ def all_words(documents):
     return list(sorted(words))
 
 
-def load(filename='all_stories.json'):
+def load(filename='singular_value_decomposition/all_stories.json'):
     with open(filename, 'r') as infile:
         return json.loads(infile.read())
 
