@@ -43,7 +43,7 @@ def get_fibonacci_sequence(n=20):
 
 def generate_points(n, range_min=-10, range_max=10, seed=42):
     """
-    Generates n points with random integer coordinates.
+    Generates n points with random integer coordinates ensuring unique x-values.
 
     Parameters:
     - n: Number of points to generate.
@@ -58,8 +58,16 @@ def generate_points(n, range_min=-10, range_max=10, seed=42):
         random.seed(seed)
 
     points = []
+    used_x = set()  # Set to store used x-values
+
     for _ in range(n):
         x = random.randint(range_min, range_max)
+        
+        # Keep generating new x-values until we find one that hasn't been used
+        while x in used_x:
+            x = random.randint(range_min, range_max)
+        
+        used_x.add(x)
         y = random.randint(range_min, range_max)
         points.append([x, y])
 
@@ -87,41 +95,6 @@ def get_coef_lagrangepolynomial_basis(points):
     return coef
 
 
-def get_matrix_form_lagrange_polynomial(n, numeric_points=False):
-
-    points = generate_points_symbolic(n)
-
-    coef = get_coef_lagrangepolynomial_basis(points)
-    for i in range(len(coef)):
-        for j in range(len(coef[i])):
-            coef[i][j] = sp.factor(coef[i][j])
-
-    A = sp.Matrix(coef).T
-    print(tabulate(coef, 'grid'))
-
-    y = sp.Matrix([y for x, y in points])
-    terms_standard_base = A * y
-    coef_standard_base = [elem for elem in terms_standard_base]
-    x = sp.symbols('x')
-    poly = sp.Poly(sum(coef * x**i for i, coef in enumerate((coef_standard_base))), x)
-
-    if numeric_points:
-        points_numeric = generate_points(n)
-        print(points_numeric)
-        points_dict = {}
-        for i in range(n):
-            points_dict[points[i][0]] = points_numeric[i][0]
-            points_dict[points[i][1]] = points_numeric[i][1]
-        poly = poly.subs(points_dict)
-        print(poly)
-        print(poly.subs(x, points_numeric[1][0]))
-        return poly
-
-    poly = poly.simplify()
-    print(poly.subs(x, points[1][0]).simplify())
-    return poly, A
-
-
 def div_diff_recurrent(k, j, points, memo):
     if f"{k+1}-{j}" in memo:
         return memo[f"{k+1}-{j}"]
@@ -146,7 +119,11 @@ def get_divided_differences(points):
 
 
 def get_matrix_form_newton_polynomial(n, numeric_points=False):
-    points = generate_points_symbolic(n)
+    if numeric_points:
+        points = generate_points(n)
+        print(points)
+    else:
+        points = generate_points_symbolic(n)
 
     n = len(points)
     x = sp.symbols('x')
@@ -182,11 +159,37 @@ def get_matrix_form_newton_polynomial(n, numeric_points=False):
 
     x = sp.symbols('x')
     poly = sp.Poly(sum(coef * x**i for i, coef in enumerate((coef_standard_base))), x)
+
     poly = poly.simplify()
-
     print("CHECK", poly.subs(x, points[1][0]).simplify())
+    return poly, A
 
-    return coef
+
+def get_matrix_form_lagrange_polynomial(n, numeric_points=False):
+    if numeric_points:
+        points = generate_points(n)
+        print(points)
+    else:
+        points = generate_points_symbolic(n)
+
+    coef = get_coef_lagrangepolynomial_basis(points)
+    for i in range(len(coef)):
+        for j in range(len(coef[i])):
+            coef[i][j] = sp.factor(coef[i][j])
+
+    A = sp.Matrix(coef).T
+    print(tabulate(coef, 'grid'))
+
+    y = sp.Matrix([y for x, y in points])
+    terms_standard_base = A * y
+    coef_standard_base = [elem for elem in terms_standard_base]
+    x = sp.symbols('x')
+    poly = sp.Poly(sum(coef * x**i for i, coef in enumerate((coef_standard_base))), x)
+
+    poly = poly.simplify()
+    print("CHECK", poly.subs(x, points[1][0]).simplify())
+    return poly, A
 
 
-get_matrix_form_newton_polynomial(4, numeric_points=False)
+get_matrix_form_newton_polynomial(4, numeric_points=True)
+get_matrix_form_lagrange_polynomial(4, numeric_points=True)
