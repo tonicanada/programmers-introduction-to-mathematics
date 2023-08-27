@@ -79,6 +79,7 @@ def get_bezier_curve(points_list=[(3, 3), (0, 1), (-3, 2), (-5, -4)]):
     return [x, y]
 
 
+
 def plot_construction_bezier_curve(
     points_list=[(3, 3), (0, 1), (-3, 2), (-5, -4), (0, -8)]
 ):
@@ -192,4 +193,4 @@ def comparison_lagrange_vs_newton_interpolation(
 # print(a(0), a(1), a(2), a(3), a(4), a(5), a(6), a(7))
 
 
-plot_construction_bezier_curve()
+# plot_construction_bezier_curve()

@@ -1,7 +1,8 @@
 import sympy as sp
 import random
 from tabulate import tabulate
-import json
+import numpy as np
+import math
 
 
 # Ejercicio 10.10
@@ -62,11 +63,11 @@ def generate_points(n, range_min=-10, range_max=10, seed=42):
 
     for _ in range(n):
         x = random.randint(range_min, range_max)
-        
+
         # Keep generating new x-values until we find one that hasn't been used
         while x in used_x:
             x = random.randint(range_min, range_max)
-        
+
         used_x.add(x)
         y = random.randint(range_min, range_max)
         points.append([x, y])
@@ -82,20 +83,23 @@ def generate_points_symbolic(n):
     return points
 
 
-def get_coef_lagrangepolynomial_basis(points):
-    n = len(points)
-    x = sp.symbols('x')
-    coef = []
-    for i in range(n):
-        term = 1
-        for j in range(n):
-            if i != j:
-                term = term * ((x - points[j][0]) / (points[i][0] - points[j][0]))
-        coef.append(sp.Poly(term, x).all_coeffs()[::-1])
-    return coef
-
-
 def div_diff_recurrent(k, j, points, memo):
+    """
+    Calculate the divided differences for a set of points using a recursive approach.
+
+    Parameters:
+    - k (int): The starting index of the current divided difference.
+    - j (int): The ending index of the current divided difference.
+    - points (list of lists): A list containing the x, y values of the points. 
+                               Each list is of the form [x, y].
+    - memo (dict): A dictionary used for memoization to store already computed divided differences.
+
+    Returns:
+    - float or symbolic expression (depends on the points input form): The calculated divided difference for the range [k, j].
+
+    Note:
+    - The function uses memoization to avoid redundant calculations.
+    """
     if f"{k+1}-{j}" in memo:
         return memo[f"{k+1}-{j}"]
 
@@ -112,21 +116,38 @@ def div_diff_recurrent(k, j, points, memo):
 
 
 def get_divided_differences(points):
+    """
+    Compute the divided differences for a given set of points.
+
+    Parameters:
+    - points (list of lists): A list containing the x, y values of the points. 
+                               Each tuple is of the form [x, y].
+
+    Returns:
+    - dict: A dictionary containing the computed divided differences. The keys represent 
+            the range [k, j] and the values are the corresponding divided differences.
+    """
     n = len(points)
     divided_diff_dict = {}
     div_diff_recurrent(0, n, points, divided_diff_dict)
     return divided_diff_dict
 
 
-def get_matrix_form_newton_polynomial(n, numeric_points=False):
-    if numeric_points:
-        points = generate_points(n)
-        print(points)
-    else:
-        points = generate_points_symbolic(n)
-
+def get_coef_lagrangepolynomial_basis(points, x):
     n = len(points)
-    x = sp.symbols('x')
+    coef = []
+    for i in range(n):
+        term = 1
+        for j in range(n):
+            if i != j:
+                term = term * ((x - points[j][0]) / (points[i][0] - points[j][0]))
+        coef.append(sp.Poly(term, x).all_coeffs()[::-1])
+    y = sp.Matrix([y for x, y in points])
+    return coef, y
+
+
+def get_coef_newtonpolynomial_basis(points, x):
+    n = len(points)
     coef = []
     term = 1
     for i in range(n):
@@ -141,38 +162,30 @@ def get_matrix_form_newton_polynomial(n, numeric_points=False):
         coef_same_dimension.append(c)
 
     coef = coef_same_dimension
-
     div_differences = get_divided_differences(points)
     y = []
 
     for i in range(1, n + 1):
         y.append(div_differences[f'1-{i}'])
 
-    A = sp.Matrix(coef).T
-    print(tabulate(coef, 'grid'))
-
     y = sp.Matrix(y)
 
-    terms_standard_base = A * y
-
-    coef_standard_base = [elem for elem in terms_standard_base]
-
-    x = sp.symbols('x')
-    poly = sp.Poly(sum(coef * x**i for i, coef in enumerate((coef_standard_base))), x)
-
-    poly = poly.simplify()
-    print("CHECK", poly.subs(x, points[1][0]).simplify())
-    return poly, A
+    return coef, y
 
 
-def get_matrix_form_lagrange_polynomial(n, numeric_points=False):
+def get_matrix_form_interpolation_polynomial(n, numeric_points=False, polynomial='lagrange'):
     if numeric_points:
         points = generate_points(n)
         print(points)
     else:
         points = generate_points_symbolic(n)
 
-    coef = get_coef_lagrangepolynomial_basis(points)
+    x = sp.symbols('x')
+    if polynomial == 'lagrange':
+        coef, y = get_coef_lagrangepolynomial_basis(points, x)
+    elif polynomial == 'newton':
+        coef, y = get_coef_newtonpolynomial_basis(points, x)
+
     for i in range(len(coef)):
         for j in range(len(coef[i])):
             coef[i][j] = sp.factor(coef[i][j])
@@ -180,10 +193,8 @@ def get_matrix_form_lagrange_polynomial(n, numeric_points=False):
     A = sp.Matrix(coef).T
     print(tabulate(coef, 'grid'))
 
-    y = sp.Matrix([y for x, y in points])
     terms_standard_base = A * y
     coef_standard_base = [elem for elem in terms_standard_base]
-    x = sp.symbols('x')
     poly = sp.Poly(sum(coef * x**i for i, coef in enumerate((coef_standard_base))), x)
 
     poly = poly.simplify()
@@ -191,5 +202,104 @@ def get_matrix_form_lagrange_polynomial(n, numeric_points=False):
     return poly, A
 
 
-get_matrix_form_newton_polynomial(4, numeric_points=True)
-get_matrix_form_lagrange_polynomial(4, numeric_points=True)
+# Ejercicio 10.13
+# The Bernstein basis is a basis of the vector space of polynomials of degree at most
+# n. In an exercise from Chapter 2, you explored this basis in terms of Bézier curves. Like
+# Taylor polynomials, Bernstein polynomials can be used to approximate functions R → R
+# to arbitrary accuracy. Look up the definition of the Bernstein basis, and read a theorem
+# that proves they can be used to approximate functions arbitrarily well.
+
+def get_linearinterpolation_between_points(p1, p2, t):
+    lerp = p1 + (p2 - p1) * t
+    return lerp
+
+
+def get_bezier_curve(n):
+    p = generate_points(n, seed=50)
+    # p = generate_points_symbolic(3)
+
+    p = np.array(p)
+
+    lerp = p.copy()
+    t = sp.Symbol('t')
+
+    while len(lerp) > 1:
+        m = len(lerp)
+        for i in range(len(lerp) - 1):
+            lerp = np.vstack(
+                (lerp, get_linearinterpolation_between_points(lerp[i], lerp[i + 1], t)))
+
+        lerp = lerp[m:]
+
+    lerp[0][0] = lerp[0][0].simplify()
+    lerp[0][1] = lerp[0][1].simplify()
+
+    print(lerp[0].tolist())
+
+    return lerp[0].tolist()
+
+
+def get_bezier_curve_in_terms_of_points(n):
+    p = []
+    for i in range(n):
+        p.append(sp.symbols(f'p{i}'))
+    t = sp.Symbol('t')
+
+    lerp = p.copy()
+
+    while len(lerp) > 1:
+        m = len(lerp)
+        for i in range(len(lerp) - 1):
+            lerp.append(get_linearinterpolation_between_points(lerp[i], lerp[i + 1], t))
+        lerp = lerp[m:]
+
+    lerp[0] = lerp[0].simplify()
+    lerp[0] = sp.collect(lerp[0], t)
+
+    print(lerp[0])
+
+    return lerp[0]
+
+
+def get_matrix_form_bernstein_polynomial(n):
+    p = []
+    for i in range(n+1):
+        p.append(sp.symbols(f'p{i}'))
+    t = sp.Symbol('t')
+
+    coef = []
+    for i in range(n+1):
+        print(i, n)
+        bernstein_in = math.comb(n, i) * (1-t)**(n-i) * t**i
+        coef.append(sp.Poly(bernstein_in, t).all_coeffs()[::-1])
+
+    A = sp.Matrix(coef).T
+    print(tabulate(coef, 'grid'))
+
+    y = sp.Matrix(p)
+
+    terms_standard_base = A * y
+
+    print(terms_standard_base)
+
+    print(A.inv()*terms_standard_base)
+    # coef_standard_base = [elem for elem in terms_standard_base]
+    # poly = sp.Poly(sum(coef * t**i for i, coef in enumerate((coef_standard_base))), t)
+
+    # poly = poly.simplify()
+    # print("CHECK", poly.subs(t, p[1]).simplify())
+    # return poly, A
+
+
+
+
+
+
+
+
+# get_matrix_form_interpolation_polynomial(4, numeric_points=True, polynomial='lagrange')
+# get_matrix_form_lagrange_polynomial(4, numeric_points=True)
+
+# get_bezier_curve(3)
+get_bezier_curve_in_terms_of_points(5)
+get_matrix_form_bernstein_polynomial(4)
