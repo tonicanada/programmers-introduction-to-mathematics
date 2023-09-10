@@ -90,7 +90,7 @@ def div_diff_recurrent(k, j, points, memo):
     Parameters:
     - k (int): The starting index of the current divided difference.
     - j (int): The ending index of the current divided difference.
-    - points (list of lists): A list containing the x, y values of the points. 
+    - points (list of lists): A list containing the x, y values of the points.
                                Each list is of the form [x, y].
     - memo (dict): A dictionary used for memoization to store already computed divided differences.
 
@@ -120,11 +120,11 @@ def get_divided_differences(points):
     Compute the divided differences for a given set of points.
 
     Parameters:
-    - points (list of lists): A list containing the x, y values of the points. 
+    - points (list of lists): A list containing the x, y values of the points.
                                Each tuple is of the form [x, y].
 
     Returns:
-    - dict: A dictionary containing the computed divided differences. The keys represent 
+    - dict: A dictionary containing the computed divided differences. The keys represent
             the range [k, j] and the values are the corresponding divided differences.
     """
     n = len(points)
@@ -263,14 +263,14 @@ def get_bezier_curve_in_terms_of_points(n):
 
 def get_matrix_form_bernstein_polynomial(n):
     p = []
-    for i in range(n+1):
+    for i in range(n + 1):
         p.append(sp.symbols(f'p{i}'))
     t = sp.Symbol('t')
 
     coef = []
-    for i in range(n+1):
+    for i in range(n + 1):
         print(i, n)
-        bernstein_in = math.comb(n, i) * (1-t)**(n-i) * t**i
+        bernstein_in = math.comb(n, i) * (1 - t)**(n - i) * t**i
         coef.append(sp.Poly(bernstein_in, t).all_coeffs()[::-1])
 
     A = sp.Matrix(coef).T
@@ -282,24 +282,170 @@ def get_matrix_form_bernstein_polynomial(n):
 
     print(terms_standard_base)
 
-    print(A.inv()*terms_standard_base)
-    # coef_standard_base = [elem for elem in terms_standard_base]
-    # poly = sp.Poly(sum(coef * t**i for i, coef in enumerate((coef_standard_base))), t)
-
-    # poly = poly.simplify()
-    # print("CHECK", poly.subs(t, p[1]).simplify())
-    # return poly, A
+    print(A.inv() * terms_standard_base)
 
 
+# Ejercicio 10.15. The LU decomposition is a technique related to Gaussian Elimination which is
+# much faster when doing batch processing. For example, suppose you want to compute
+# the basis representation for a change of basis matrix A and vectors y1 , . . . , ym . One can
+# compute the LU decomposition of A once (computationally intensive) and use the output
+# to solve Ax = yi many times quickly. Look up the LU decomposition, what it computes,
+# read a proof that it works, and then implement it in code.
+
+def generate_random_matrix(n):
+    M = sp.zeros((n))
+    for i in range(n):
+        for j in range(n):
+            M[i, j] = random.uniform(1, 10)
+    return M
 
 
+def get_lu_decomposition(n, symbolic=False):
+
+    if symbolic:
+        A = []
+        for i in range(n):
+            row = []
+            for j in range(n):
+                row.append(None)
+            A.append(row)
+        var_dict = {}
+
+        for i in range(n):
+            for j in range(n):
+                var_dict[f"a_{i+1}_{j+1}"] = sp.Symbol(f'a_{i+1}_{j+1}')
+                A[i][j] = var_dict[f"a_{i+1}_{j+1}"]
+
+        A = sp.Matrix(A)
+    else:
+        A = generate_random_matrix(n)
+        print(tabulate(A.tolist(), 'grid'))
+
+    L_list = []
+
+    for j in range(0, n):
+        for i in range(n - 1, -1, -1):
+            if j >= i:
+                break
+            L = sp.eye(n)
+            L[i, :] = A[i - 1, j] * L[i, :] - A[i, j] * L[i - 1, :]
+            L_list.append(L)
+            A = L * A
+
+    A = A.applyfunc(sp.simplify)
+    print(tabulate(A.tolist(), 'grid'))
+
+    L_acum = sp.eye(n)
+
+    for i in range(len(L_list) - 1, -1, -1):
+        L_acum = L_acum * L_list[i]
+    print(tabulate(L_acum.tolist(), 'grid'))
+
+    check_matrix = L_acum.inv() * A
+    check_matrix = check_matrix.applyfunc(sp.simplify)
+
+    print(tabulate(check_matrix.tolist(), 'grid'))
 
 
+def linear_programming_simplex(matrix=sp.Matrix([
+    [3, 5, 78],
+    [4, 1, 36],
+    [-5, -4, 0]
+])):
+    # Example
+    # Maximize P = 5x + 4y
+    # Constraints:
+    # 3x + 5y <= 78
+    # 4x + y <= 36
+    # x, y >= 0
+
+    # matrix = sp.Matrix([
+    #     [3, 5, 1, 0, 0, 78],
+    #     [4, 1, 0, 1, 0, 36],
+    #     [-5, -4, 0, 0, 1, 0]
+    # ])
+
+    rows = matrix.rows
+    cols = matrix.cols
+
+    cols_to_insert = sp.eye(rows)
+    matrix = matrix.col_insert(cols - 1, cols_to_insert)
+
+    print("ORIGINAL", matrix)
+
+    cols = matrix.cols
+
+    last_row_has_negative = any(val < 0 for val in matrix.row(rows - 1))
+
+    while last_row_has_negative:
+
+        # Al inicio estamos en el vector 0 y tenemos que escoger
+        # una variable para "hacerla aumentar" yendo por el "perímetro"
+        # de la feasible zone. Escogemos el valor mínimo de la 3 fila
+        # de la matriz, dado que esa variable es la que hace aumentar
+        # más rápido la función objetivo
+
+        var_to_tight = [float('inf'), 0]
+        for i in range(matrix.cols):
+            if matrix.row(rows - 1)[i] < var_to_tight[0]:
+                var_to_tight[0] = matrix.row(rows - 1)[i]
+                var_to_tight[1] = i
+
+        print(var_to_tight)
+        # Ahora debemos ver hasta cuánto se puede "estirar" la
+        # variable elegida, esto lo define alguna de las constraints.
+        # Esto lo podemos ver comparando el ratio entre el coeficiente
+        # de la variable que estamos estirando y la constante. En el ejemplo:
+        # Fila 1: 78/3 = 26
+        # Fila 2: 36/4 = 9
+        # Nos quedamos con fila que tenga el valor más pequeño
+
+        limitant_constraint = [float('inf'), 0]
+        for i in range(rows - 1):
+            if matrix.row(i)[var_to_tight[1]] != 0:
+                ratio = matrix.row(i)[cols - 1] / matrix.row(i)[var_to_tight[1]]
+                if ratio < limitant_constraint[0]:
+                    limitant_constraint[0] = ratio
+                    limitant_constraint[1] = i
+        print(limitant_constraint)
+
+        # Aplicamos factor a fila de la limitant_constraint para dejar coeficiente en 1
+        coef = matrix.row(limitant_constraint[1])[var_to_tight[1]]
+        matrix.row_op(limitant_constraint[1], lambda v, j: v * (1 / coef))
+
+        # Ahora aplicamos operaciones de fila para dejar en 0 las demás filas
+        for i in range(rows):
+            if i != limitant_constraint[1]:
+                coef = matrix[i, var_to_tight[1]]
+                matrix.row_op(i, lambda v, j: v - coef * matrix[limitant_constraint[1], j])
+
+        print(matrix)
+        last_row_has_negative = any(val < 0 for val in matrix.row(rows - 1))
+
+
+matrix = [
+    [1, 1, 3, 30],
+    [2, 2, 5, 24],
+    [4, 1, 2, 36],
+    [-3, -1, -1, 0]
+]
+
+# matrix = [
+#     [1, 0, 3000],
+#     [0, 1, 4000],
+#     [1,1,5000],
+#     [-1.2, -1.7, 0]
+# ]
+
+matrix = sp.Matrix(matrix)
+
+linear_programming_simplex(matrix)
 
 
 # get_matrix_form_interpolation_polynomial(4, numeric_points=True, polynomial='lagrange')
 # get_matrix_form_lagrange_polynomial(4, numeric_points=True)
-
 # get_bezier_curve(3)
-get_bezier_curve_in_terms_of_points(5)
-get_matrix_form_bernstein_polynomial(4)
+# get_bezier_curve_in_terms_of_points(5)
+# get_matrix_form_bernstein_polynomial(4)
+
+# get_lu_decomposition(3, True)
