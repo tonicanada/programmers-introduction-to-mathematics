@@ -392,6 +392,7 @@ def linear_programming_simplex(matrix=sp.Matrix([
                 var_to_tight[1] = i
 
         print(var_to_tight)
+        
         # Ahora debemos ver hasta cuánto se puede "estirar" la
         # variable elegida, esto lo define alguna de las constraints.
         # Esto lo podemos ver comparando el ratio entre el coeficiente
