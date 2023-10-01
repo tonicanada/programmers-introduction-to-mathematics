@@ -90,3 +90,4 @@ def decompose(eigenvectors, vector):
         coefficients[i] = numpy.dot(vector, eigenvectors[i])
 
     return coefficients
+

@@ -43,7 +43,7 @@ def show_random_examples(network, test, n=5):
 
 
 def build_network():
-    input_nodes = InputNode.make_input_nodes(28*28)
+    input_nodes = InputNode.make_input_nodes(28 * 28)
 
     first_layer = [LinearNode(input_nodes) for i in range(10)]
     first_layer_relu = [ReluNode(L) for L in first_layer]
@@ -79,12 +79,12 @@ def train_mnist(data_dirname, num_epochs=5):
 
     network = build_network()
     n = len(train)
-    epoch_size = int(n/10)
+    epoch_size = int(n / 10)
 
     for i in range(num_epochs):
         shuffle(train)
         validation = train[:epoch_size]
-        real_train = train[epoch_size: 2*epoch_size]
+        real_train = train[epoch_size: 2 * epoch_size]
 
         print("Starting epoch of {} examples with {} validation".format(
             len(real_train), len(validation)))
@@ -101,4 +101,5 @@ def train_mnist(data_dirname, num_epochs=5):
 
 if __name__ == "__main__":
     data_dirname = os.path.join(os.path.dirname(__file__), 'mnist')
+    # a = load_1s_and_7s(os.path.join(data_dirname, 'mnist_train.csv'))
     network = train_mnist(data_dirname)

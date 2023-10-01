@@ -36,7 +36,7 @@ class CachedNodeData:
     '''
 
     def __init__(self, output=None, local_gradient=None, global_gradient=None,
-                local_parameter_gradient=None, global_parameter_gradient=None):
+                 local_parameter_gradient=None, global_parameter_gradient=None):
         self.output = output
         self.local_gradient = local_gradient
         self.global_gradient = global_gradient
@@ -45,11 +45,11 @@ class CachedNodeData:
 
     def __repr__(self):
         return (
-            "CachedNodeData(output=" + repr( self.output ) + ", " +
-            "local_gradient=" + repr( self.local_gradient ) + ", " +
-            "global_gradient=" + repr( self.global_gradient ) + ", " +
-            "local_parameter_gradient=" + repr( self.local_parameter_gradient ) + ", " +
-            "global_parameter_gradient=" + repr( self.global_parameter_gradient ) + ")"
+            "CachedNodeData(output=" + repr(self.output) + ", " +
+            "local_gradient=" + repr(self.local_gradient) + ", " +
+            "global_gradient=" + repr(self.global_gradient) + ", " +
+            "local_parameter_gradient=" + repr(self.local_parameter_gradient) + ", " +
+            "global_parameter_gradient=" + repr(self.global_parameter_gradient) + ")"
         )
 
 
@@ -120,11 +120,12 @@ class Node:
         This method must be overridden for any output nodes that are terminal during
         training, such as an error node.
         '''
-        return sum(
-            successor.global_gradient *
-            successor.local_gradient_for_argument(self)
-            for successor in self.successors
-        )
+        total_gradient = 0
+        for successor in self.successors:
+            total_gradient += successor.global_gradient * \
+                successor.local_gradient_for_argument(self)
+
+        return total_gradient
 
     def local_gradient_for_argument(self, argument):
         '''Return the derivative of this node with respect to a particular argument.'''
@@ -183,6 +184,7 @@ class Node:
 
 class InputNode(Node):
     '''A Node representing an input to the computation graph.'''
+
     def __init__(self, input_index):
         super().__init__()
         self.input_index = input_index
@@ -298,23 +300,26 @@ class LinearNode(Node):
                 random.uniform(-weight_bound, weight_bound) for _ in range(arglen)]
 
     def compute_output(self, inputs):
-        return sum(
-            w * x.evaluate(inputs)
-            for (w, x) in zip(self.weights, self.arguments)
-        )
+        output = 0
+        for weight, argument in zip(self.weights, self.arguments):
+            output += weight * argument.evaluate(inputs)
+        return output
 
     def compute_local_gradient(self):
         return self.weights
 
     def compute_local_parameter_gradient(self):
-        return [arg.output for arg in self.arguments]
+        gradients = []
+        for argument in self.arguments:
+            gradients.append(argument.output)
+        return gradients
 
     def compute_global_parameter_gradient(self):
-        return [
-            self.global_gradient *
-            self.local_parameter_gradient_for_argument(argument)
-            for argument in self.arguments
-        ]
+        gradients = []
+        for argument in self.arguments:
+            gradient = self.global_gradient * self.local_parameter_gradient_for_argument(argument)
+            gradients.append(gradient)
+        return gradients
 
     def local_parameter_gradient_for_argument(self, argument):
         '''Return the derivative of this node with respect to the weight
@@ -342,6 +347,7 @@ class L2ErrorNode(Node):
 
     def compute_error(self, inputs, label):
         argument_value = self.arguments[0].evaluate(inputs)
+        print("ARG", argument_value)
         self.label = label  # cache the label
         return (argument_value - label) ** 2
 
@@ -357,6 +363,7 @@ class NeuralNetwork:
     '''A wrapper class for a computation graph, which encapsulates the
     backpropagation algorithm and training.
     '''
+
     def __init__(self, terminal_node, input_nodes, error_node=None, step_size=None):
         self.terminal_node = terminal_node
         self.input_nodes = input_nodes
