@@ -7,3 +7,5 @@ venv
 cov_annotate/
 cov_html/
 node_modules/
+neural_network/mnist/mnist_train.csv
+neural_network/mnist/mnist_test.csv
