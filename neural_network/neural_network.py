@@ -347,7 +347,6 @@ class L2ErrorNode(Node):
 
     def compute_error(self, inputs, label):
         argument_value = self.arguments[0].evaluate(inputs)
-        print("ARG", argument_value)
         self.label = label  # cache the label
         return (argument_value - label) ** 2
 
