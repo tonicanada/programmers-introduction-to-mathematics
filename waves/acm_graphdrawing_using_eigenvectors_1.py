@@ -1,3 +1,4 @@
+import json
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -6,6 +7,8 @@ from mpl_toolkits.mplot3d import Axes3D
 # Suponiendo que A es tu matriz de adyacencia
 # adj_matrix = np.array(A)
 G = nx.dodecahedral_graph()
+adj_matrix = nx.adjacency_matrix(G)
+print(adj_matrix.toarray())
 
 
 # Calcular la matriz laplaciana
@@ -23,12 +26,18 @@ z_coords = eigenvectors[:, 3]
 nodes_list = sorted(G.nodes())
 pos = {node: (x_coords[i], y_coords[i], z_coords[i]) for i, node in enumerate(nodes_list)}
 
+# Guardamos las posiciones en archivo json
+# with open('dodecahedron_vertices.json', 'w') as json_file:
+#     json.dump(pos, json_file)
+
 # Configurar el tamaño de la figura
 fig = plt.figure(figsize=(12, 6))
 
 # Dibujar el grafo en 3D basado en los eigenvectores
 ax = fig.add_subplot(111, projection='3d')
-for edge in G.edges():
+
+
+for idx, edge in enumerate(G.edges()):
     x = np.array((pos[edge[0]][0], pos[edge[1]][0]))
     y = np.array((pos[edge[0]][1], pos[edge[1]][1]))
     z = np.array((pos[edge[0]][2], pos[edge[1]][2]))

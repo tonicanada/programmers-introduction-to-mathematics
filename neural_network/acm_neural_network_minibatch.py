@@ -1,5 +1,6 @@
 import math
 import random
+import numpy as np
 
 
 class CachedNodeData:
@@ -202,7 +203,11 @@ class InputNode(Node):
         self.input_index = input_index
 
     def compute_output(self, inputs):
-        return inputs[self.input_index]
+        n = len(inputs)
+        output = np.zeros(n)
+        for i in range(n):
+            output[i] = inputs[i][self.input_index]
+        return output
 
     @staticmethod
     def make_input_nodes(count):
@@ -224,11 +229,23 @@ class ReluNode(Node):
 
     def compute_output(self, inputs):
         argument_value = self.arguments[0].evaluate(inputs)
-        return max(0, argument_value)
+        output = np.maximum(0, argument_value)
+        return output
 
     def compute_local_gradient(self):
         last_input = self.arguments[0].output
-        return [1 if last_input > 0 else 0]
+        n = len(last_input)
+        output = np.zeros(n)
+
+        for i in range(n):
+            if last_input[i] > 0:
+                output[i] = 1
+            else:
+                output[i] = 0
+
+        counts = [np.round(np.mean(output))]
+
+        return counts
 
     def compute_local_parameter_gradient(self):
         return []  # No tunable parameters
@@ -251,7 +268,7 @@ class SigmoidNode(Node):
 
     def compute_output(self, inputs):
         argument_value = self.arguments[0].evaluate(inputs)
-        exp_value = math.exp(argument_value)
+        exp_value = np.exp(argument_value)
         return exp_value / (exp_value + 1)
 
     def compute_local_gradient(self):
@@ -359,13 +376,17 @@ class L2ErrorNode(Node):
 
     def compute_error(self, inputs, label):
         argument_value = self.arguments[0].evaluate(inputs)
-        self.label = label  # cache the label
+        self.label = label
         output = (argument_value - label) ** 2
+        print(np.mean(output))
+
         return output
 
     def compute_local_gradient(self):
         last_input = self.arguments[0].output
-        return [2 * (last_input - self.label)]
+        output = [2 * (last_input - self.label)]
+        output = [np.mean(output)]
+        return output
 
     def compute_global_gradient(self):
         return 1
@@ -425,8 +446,14 @@ class NeuralNetwork:
         Returns:
             None (self is modified)
         '''
+        inputs = [item[0] for item in dataset]
+        label = [item[1] for item in dataset]
+
+        inputs = np.array(inputs)
+        label = np.array(label)
+
         for i in range(max_steps):
-            inputs, label = random.choice(dataset)
+
             self.backpropagation_step(inputs, label, self.step_size)
 
             if i % int(max_steps / 10) == 0:

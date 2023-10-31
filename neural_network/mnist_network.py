@@ -25,6 +25,24 @@ def load_1s_and_7s(filename):
     return examples
 
 
+def load_all_data(filename, size=50000):
+    print('Loading data {}...'.format(filename))
+    examples = []
+    with open(filename, 'r') as infile:
+        for line in infile:
+            tokens = [int(x) for x in line.split(',')]
+            label = tokens[0]
+            example = [x / 255 for x in tokens[1:]]  # scale to [0,1]
+            one_hot = [0] * 10
+            one_hot[label] = 1
+            examples.append([example, one_hot])
+            if (size < len(examples)):
+                break
+            
+    print('Data loaded')
+    return examples
+
+
 def print_example(example):
     for i, pixel in enumerate(example):
         if i % 28 == 0:
@@ -54,6 +72,7 @@ def build_network():
     linear_output = LinearNode(second_layer_relu)
     output = SigmoidNode(linear_output)
     error_node = L2ErrorNode(output)
+
     network = NeuralNetwork(
         output, input_nodes, error_node=error_node, step_size=0.05)
 
@@ -67,7 +86,7 @@ You may have to extract them from the gzipped tarball mnist/mnist.tar.gz.
 '''
 
 
-def train_mnist(data_dirname, num_epochs=5):
+def train_mnist(data_dirname, network, num_epochs=5):
     train_file = os.path.join(data_dirname, 'mnist_train.csv')
     test_file = os.path.join(data_dirname, 'mnist_test.csv')
     try:
@@ -77,7 +96,7 @@ def train_mnist(data_dirname, num_epochs=5):
         print(cant_find_files.format(train_file, test_file))
         raise
 
-    network = build_network()
+    # network = build_network()
     n = len(train)
     epoch_size = int(n / 10)
 
@@ -102,4 +121,5 @@ def train_mnist(data_dirname, num_epochs=5):
 if __name__ == "__main__":
     data_dirname = os.path.join(os.path.dirname(__file__), 'mnist')
     # a = load_1s_and_7s(os.path.join(data_dirname, 'mnist_train.csv'))
-    network = train_mnist(data_dirname)
+    # a = load_all_data(os.path.join(data_dirname, 'mnist_train.csv'))
+    network = train_mnist(data_dirname, build_network())

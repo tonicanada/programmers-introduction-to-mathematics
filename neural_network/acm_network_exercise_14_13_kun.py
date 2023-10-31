@@ -102,8 +102,8 @@ def evaluate_model(path_model, test_data):
 # build_network()
 # train_mnist()
 
-# train_and_save_model("./neural_network/acm_models/20230930_kunmodel_1.pkl")
+train_and_save_model("./neural_network/acm_models/20231006_kunmodel_1.pkl")
 
 
-test_data = generate_data(seed=50)
-evaluate_model("./neural_network/acm_models/20230930_kunmodel_1.pkl", test_data)
+# test_data = generate_data(seed=50)
+# evaluate_model("./neural_network/acm_models/exercise_14_13/20230930_kunmodel_1.pkl", test_data)

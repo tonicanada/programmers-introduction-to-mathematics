@@ -1,5 +1,6 @@
 import math
 import random
+import numpy as np
 
 
 class CachedNodeData:
@@ -350,6 +351,54 @@ class LinearNode(Node):
             prefix, weights, gradient, self.output, argument_strs)
 
 
+class SoftMax(Node):
+
+    def __init__(self, arguments):
+        super().__init__(*arguments)
+
+    def compute_output(self, inputs):
+        n = len(self.arguments)
+        logits = np.zeros(n)
+        for i in range(n):
+            logits[i] = self.arguments[i].evaluate(inputs)
+
+        exp_logits = np.exp(logits)
+        predicted_probs = exp_logits / np.sum(exp_logits)
+        return predicted_probs
+
+    def compute_local_gradient(self):
+        last_output = self.output
+        return [(1 - last_output) * last_output]
+
+    def compute_local_parameter_gradient(self):
+        return []  # No tunable parameters
+
+    def compute_global_parameter_gradient(self):
+        return []  # No tunable parameters
+
+
+class CrossEntropyErrorNode(Node):
+
+    def compute_error(self, inputs, label):
+
+        self.label = label
+        predicted_probs = self.arguments[0].evaluate(inputs)
+
+        cross_entropy = -np.sum(np.array(label) * np.log(predicted_probs))
+        return cross_entropy
+
+    def compute_local_gradient(self):
+        predicted_probs = self.arguments[0].output
+
+        local_gradient = predicted_probs - np.array(self.label)
+        local_gradient = list(local_gradient)
+
+        return local_gradient
+
+    def compute_global_gradient(self):
+        return 1
+
+
 class L2ErrorNode(Node):
     '''A node computing the squared deviation error function.
 
@@ -437,6 +486,7 @@ class NeuralNetwork:
         total = len(dataset)
 
         for (example, label) in dataset:
+
             if round(self.evaluate(example)) != label:
                 errors += 1
 
