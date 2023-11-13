@@ -116,18 +116,29 @@ class HyperbolicTessellation(object):
 
         while queue:
             polygon = queue.popleft()
+
             if processed.contains_polygon(polygon):
                 continue
 
-            edges = [(polygon[i], polygon[(i + 1) % len(polygon)])
-                     for i in range(len(polygon))]
+            edges = []
+            for i in range(len(polygon)):
+                edge = (polygon[i], polygon[(i + 1) % len(polygon)])
+                edges.append(edge)
+
             for u, v in edges:
                 line = self.disk_model.line_through(u, v)
-                reflected_polygon = [line.reflect(p) for p in polygon]
+                reflected_polygon = []
+                for p in polygon:
+                    reflected_line = line.reflect(p)
+                    reflected_polygon.append(reflected_line)
                 queue.append(reflected_polygon)
+         
 
             tessellated_polygons.append(polygon)
             processed.add_polygon(polygon)
+
+
+
             if len(processed) > max_polygon_count:
                 processed.add_polygon(polygon)
                 break
@@ -191,3 +202,11 @@ class HyperbolicTessellation(object):
             absolute=True)
 
         group.add(path)
+
+
+
+tesselation_conf = TessellationConfiguration(7,4)
+ht = HyperbolicTessellation(tesselation_conf)
+
+ht.tessellate()
+ht.render("20231031_test.svg", 1000)
